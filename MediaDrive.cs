@@ -12,5 +12,26 @@ namespace MediaLib
         {
             throw new NotImplementedException();
         }
+
+        #region IMediaStorage Members
+
+        public string MainMediaPath
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void BuildMediaTree()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }

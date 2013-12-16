@@ -43,7 +43,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IMediaStorage.cs" />
+    <Compile Include="MediaDevice.cs" />
     <Compile Include="MediaDrive.cs" />
+    <Compile Include="MediaInfo.cs" />
     <Compile Include="TransferMedia.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

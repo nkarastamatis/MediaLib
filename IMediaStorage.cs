@@ -8,6 +8,8 @@ namespace MediaLib
 {
     interface IMediaStorage
     {
+        string MainMediaPath { get; set; }
         void TransferToPC();
+        void BuildMediaTree();
     }
 }

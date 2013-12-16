@@ -9,19 +9,13 @@ using System.Text.RegularExpressions;
 
 namespace MediaLib
 {
-    public class UnixFileSystemInfo
-    {
-        public FileAttributes Attributes { get; set; }
-        public string Name { get; set; }
-        public DateTime CreationTime { get; set; }
-        public string Path { get; set; }
-    }
-
     public static class TransferMedia
     {
+        public static string MediaDir = "DCIM";
+
         public static void transfer()
         {
-
+            MediaStorage();
         }
 
         private static List<IMediaStorage> MediaStorage()
@@ -68,26 +62,14 @@ namespace MediaLib
         {
             List<IMediaStorage> list = new List<IMediaStorage>();
 
-            string serial;
-            AndroidController android = AndroidController.Instance;;
-            Device device;
+            AndroidController android = AndroidController.Instance;
 
-            android.UpdateDeviceList();
-
-
-            if (android.HasConnectedDevices)
+            foreach (string serial in android.ConnectedDevices)
             {
-                serial = android.ConnectedDevices[0];
-                device = android.GetConnectedDevice(serial);
-                //this.TextBox1.Text = device.SerialNumber;
-
-                List<FileSystemInfo> andriodMediaFileSystem = new List<FileSystemInfo>();
-
-                //var r = device.PullDirectory("/sdcard/DCIM", "C:\\temp\\DCIM");
-                var s = device.PullFile("/sdcard/DCIM/100BURST/001", "C:\\temp\\BURST");
-
-                AdbCommand adbCmd = Adb.FormAdbShellCommand(device, false, "ls", "-l", "/*/DCIM/100MEDIA");
-                using (StringReader r = new StringReader(Adb.ExecuteAdbCommand(adbCmd)))
+                MediaDevice device = new MediaDevice(serial);
+                //device = android.GetConnectedDevice(serial) as MediaDevice;
+                string mainmediapath = "/*/" + MediaDir;
+                using (StringReader r = new StringReader(device.ListDirectory(mainmediapath)))
                 {
                     string line;
                     string[] splitLine;
@@ -95,51 +77,10 @@ namespace MediaLib
 
                     while (r.Peek() != -1)
                     {
-                        line = r.ReadLine();
-                        Regex x = new Regex(" +");
-                        splitLine = x.Split(line);
-                        //splitLine = line.Split(' ');
-
-                        if (splitLine.Length == 1)
-                            continue;
-
-                        int ix = 0;
-                        UnixFileSystemInfo newFileOrDir = new UnixFileSystemInfo();
-                        newFileOrDir.Attributes = new FileAttributes();
-                        if (splitLine[ix++].StartsWith("d"))
-                            newFileOrDir.Attributes &= FileAttributes.Directory;
-
-                        ix++;
-                        ix++;
-
-                        if ((newFileOrDir.Attributes & FileAttributes.Directory) != FileAttributes.Directory)
-                            ix++;
-
-                        newFileOrDir.CreationTime = DateTime.Parse(splitLine[ix++] + " " + splitLine[ix++]);
-
-                        newFileOrDir.Name = splitLine[ix];
-
-                        try
-                        {
-                            if (line.Contains(" on /system "))
-                            {
-
-                            }
-                        }
-                        catch
-                        {
-
-                        }
+                        MediaInfo newFileOrDir = new MediaInfo();
+                        device.UnixFileInfoToMediaInfo(r.ReadLine(), out newFileOrDir);
                     }
                 }
-
-                var success = device.FileSystem.FileOrDirectory("DCIM");
-                device.Phone.DialPhoneNumber("4433980031");
-
-            }
-            else
-            {
-                //this.TextBox1.Text = "Error - No Devices Connected";
             }
 
             return list;
