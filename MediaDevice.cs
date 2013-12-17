@@ -19,17 +19,7 @@ namespace MediaLib
         
         #region IMediaStorage Members
 
-        public string MainMediaPath
-        {
-            get
-            {
-                throw new NotImplementedException();
-            }
-            set
-            {
-                throw new NotImplementedException();
-            }
-        }
+        public string MainMediaPath { get; set; }
 
         public void TransferToPC()
         {
@@ -38,7 +28,7 @@ namespace MediaLib
 
         public void BuildMediaTree()
         {
-            using (StringReader r = new StringReader(this.ListDirectory("/*/DCIM/100MEDIA")))
+            using (StringReader r = new StringReader(this.ListDirectory(this.MainMediaPath)))
             {
                 string line;
                 string[] splitLine;
@@ -73,10 +63,8 @@ namespace MediaLib
             }
         }
 
-        public void UnixFileInfoToMediaInfo(string fileinfo, out MediaInfo mediainfo)
+        public void UnixFileInfoToMediaInfo(string fileinfo, ref MediaInfo mediainfo)
         {
-            mediainfo = new MediaInfo();
-
             Regex x = new Regex(" +");
             string[] splitInfo = x.Split(fileinfo);
 
@@ -84,9 +72,11 @@ namespace MediaLib
                 return;
 
             int ix = 0;
-            MediaInfo newFileOrDir = new MediaInfo();
-            if (splitInfo[ix++].StartsWith("d"))
-                newFileOrDir.SetAsDirectory();
+            char type = splitInfo[ix++].First();
+            if (type == 'd')
+                mediainfo.SetAsDirectory();
+            else if (type != '-') // link to dir
+                return; 
 
             // user (skip)
             ix++;
@@ -95,12 +85,12 @@ namespace MediaLib
             ix++;
 
             // Files have a size here, so skip is this is a file.
-            if (!newFileOrDir.IsDirectory())
+            if (!mediainfo.IsDirectory())
                 ix++;
 
-            newFileOrDir.CreationTime = DateTime.Parse(splitInfo[ix++] + " " + splitInfo[ix++]);
+            mediainfo.CreationTime = DateTime.Parse(splitInfo[ix++] + " " + splitInfo[ix++]);
 
-            newFileOrDir.Name = splitInfo[ix];
+            mediainfo.Name = splitInfo[ix];
 
         }
 

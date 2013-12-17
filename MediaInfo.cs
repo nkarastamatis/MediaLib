@@ -21,7 +21,7 @@ namespace MediaLib
         
         public void SetAsDirectory()
         {
-            this.Attributes &= FileAttributes.Directory;
+            this.Attributes |= FileAttributes.Directory;
         }
 
         public bool IsDirectory()

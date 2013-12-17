@@ -64,26 +64,49 @@ namespace MediaLib
 
             AndroidController android = AndroidController.Instance;
 
+            // Loop through all the connected devices
             foreach (string serial in android.ConnectedDevices)
             {
                 MediaDevice device = new MediaDevice(serial);
-                //device = android.GetConnectedDevice(serial) as MediaDevice;
-                string mainmediapath = "/*/" + MediaDir;
-                using (StringReader r = new StringReader(device.ListDirectory(mainmediapath)))
-                {
-                    string line;
-                    string[] splitLine;
-                    string dir;
+                
+                // start with the root and Find DCIM
+                List<string> paths = new List<string>();
+                paths.Add("/");
 
+                FindMainMediaPath(paths, ref device);
+                device.BuildMediaTree();
+                list.Add(device);
+                
+            }
+
+            return list;
+        }
+
+        private static void FindMainMediaPath(List<string> paths, ref MediaDevice device)
+        {
+            List<string> nextpaths = new List<string>();
+
+            foreach (string path in paths)
+            {
+                using (StringReader r = new StringReader(device.ListDirectory(path)))
+                {
                     while (r.Peek() != -1)
                     {
-                        MediaInfo newFileOrDir = new MediaInfo();
-                        device.UnixFileInfoToMediaInfo(r.ReadLine(), out newFileOrDir);
+                        MediaInfo info = new MediaInfo();
+                        device.UnixFileInfoToMediaInfo(r.ReadLine(), ref info);
+                        if (info.Name == MediaDir)
+                        {
+                            device.MainMediaPath = path + (path.EndsWith("/") ? null : "/") + info.Name;
+                            return;
+                        }
+                        else if (info.IsDirectory())
+                            nextpaths.Add(path + (path.EndsWith("/") ? null : "/") + info.Name);
+
                     }
                 }
             }
 
-            return list;
+            FindMainMediaPath(nextpaths, ref device);
         }
     }
 }
