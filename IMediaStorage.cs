@@ -9,7 +9,10 @@ namespace MediaLib
     interface IMediaStorage
     {
         string MainMediaPath { get; set; }
+        List<MediaInfo> MediaTree { get; set; }
+
         void TransferToPC();
+        void FindMainMediaPath();
         void BuildMediaTree();
     }
 }

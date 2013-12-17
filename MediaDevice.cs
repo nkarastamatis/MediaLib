@@ -11,15 +11,22 @@ namespace MediaLib
 {
     class MediaDevice : Device, IMediaStorage
     {
+        private List<string> AndroidSystemDirs = new List<string>(new string[]
+        {
+            "/proc", "/dev", "/etc", "/acct", "/firmware", "/sys", "/system"
+        });
+
         public MediaDevice(string deviceSerial)
             : base(deviceSerial)
         {
-
+            MediaTree = new List<MediaInfo>();
         }
         
         #region IMediaStorage Members
 
         public string MainMediaPath { get; set; }
+
+        public List<MediaInfo> MediaTree { get; set; }
 
         public void TransferToPC()
         {
@@ -28,72 +35,117 @@ namespace MediaLib
 
         public void BuildMediaTree()
         {
-            using (StringReader r = new StringReader(this.ListDirectory(this.MainMediaPath)))
+            List<string> paths = new List<string>();
+            paths.Add(MainMediaPath);
+            SearchPaths(paths, BuildTree);
+        }
+
+
+
+        public void FindMainMediaPath()
+        {
+            // start with the root and Find DCIM
+            List<string> paths = new List<string>();
+            paths.Add("/");
+            SearchPaths(paths, IsMediaDir);
+        }
+
+        #endregion
+
+        delegate bool SearchAction(ref MediaInfo info, string path);
+
+        private bool IsMediaDir(ref MediaInfo info, string path)
+        {
+            bool endSearch = false;
+            if (info.Name == TransferMedia.MediaDir)
             {
-                string line;
-                string[] splitLine;
-                string dir;
+                MainMediaPath = path + (path.EndsWith("/") ? null : "/") + info.Name;
+                endSearch = true;
+            }
 
-                while (r.Peek() != -1)
+            return endSearch;
+        }
+
+        private bool BuildTree(ref MediaInfo info, string path)
+        {
+            bool endSearch = false;
+            
+            info.Path = path;
+            MediaTree.Add(info);
+        
+            return endSearch;
+        }
+
+        private void SearchPaths(List<string> paths, SearchAction action)
+        {
+            List<string> nextpaths = new List<string>();
+
+            foreach (string path in paths)
+            {
+
+                using (StringReader r = new StringReader(ListDirectory(path)))
                 {
-                    line = r.ReadLine();
-                    Regex x = new Regex(" +");
-                    splitLine = x.Split(line);
+                    while (r.Peek() != -1)
+                    {
+                        MediaInfo info = UnixFileInfoToMediaInfo(r.ReadLine());
 
-                    if (splitLine.Length == 1)
-                        continue;
+                        if (info != null)
+                        {
+                            bool endsearch = action(ref info, path);
+                            if (endsearch)
+                                return;
 
-                    int ix = 0;
-                    MediaInfo newFileOrDir = new MediaInfo();
-                    if (splitLine[ix++].StartsWith("d"))
-                        newFileOrDir.SetAsDirectory();
-
-                    ix++;
-                    ix++;
-
-                    // Files have a size here, so skip is this is a file.
-                    if (!newFileOrDir.IsDirectory())
-                        ix++;
-
-                    newFileOrDir.CreationTime = DateTime.Parse(splitLine[ix++] + " " + splitLine[ix++]);
-
-                    newFileOrDir.Name = splitLine[ix];
-
+                            if (info.IsDirectory() && !AndroidSystemDir(path))
+                                nextpaths.Add(path + (path.EndsWith("/") ? null : "/") + info.Name);
+                        }
+                    }
                 }
             }
+            if (nextpaths.Count > 0 && nextpaths.Count < 50)
+                SearchPaths(nextpaths, action);
         }
 
-        public void UnixFileInfoToMediaInfo(string fileinfo, ref MediaInfo mediainfo)
+        private bool AndroidSystemDir(string path)
         {
-            Regex x = new Regex(" +");
-            string[] splitInfo = x.Split(fileinfo);
+            return AndroidSystemDirs.Any(path.Contains);
+        }
 
-            if (splitInfo.Length == 1)
-                return;
+        private MediaInfo UnixFileInfoToMediaInfo(string fileinfo)
+        {
+            MediaInfo mediainfo = null;
+
+            Regex x = new Regex(" +");
+            string[] splitInfo = x.Split(fileinfo);            
 
             int ix = 0;
-            char type = splitInfo[ix++].First();
-            if (type == 'd')
-                mediainfo.SetAsDirectory();
-            else if (type != '-') // link to dir
-                return; 
+            
+            // '-' means file
+            // only process if this is a file of directory
+            char type = splitInfo[ix++].FirstOrDefault();
+            if (type == 'd' || type == '-')
+            {
+                mediainfo = new MediaInfo();
 
-            // user (skip)
-            ix++;
+                if (type == 'd')
+                    mediainfo.SetAsDirectory();
 
-            // 
-            ix++;
-
-            // Files have a size here, so skip is this is a file.
-            if (!mediainfo.IsDirectory())
+                // user (skip)
                 ix++;
 
-            mediainfo.CreationTime = DateTime.Parse(splitInfo[ix++] + " " + splitInfo[ix++]);
+                // dir? (skip)
+                ix++;
 
-            mediainfo.Name = splitInfo[ix];
+                // Files have a size here, so skip if this is a file.
+                if (!mediainfo.IsDirectory())
+                    ix++;
+
+                mediainfo.CreationTime = DateTime.Parse(splitInfo[ix++] + " " + splitInfo[ix++]);
+
+                mediainfo.Name = splitInfo[ix];
+            }
+
+            return mediainfo;
 
         }
-
-        #endregion      
     }
 }

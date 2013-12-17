@@ -69,11 +69,9 @@ namespace MediaLib
             {
                 MediaDevice device = new MediaDevice(serial);
                 
-                // start with the root and Find DCIM
-                List<string> paths = new List<string>();
-                paths.Add("/");
-
-                FindMainMediaPath(paths, ref device);
+                
+                
+                device.FindMainMediaPath();
                 device.BuildMediaTree();
                 list.Add(device);
                 
@@ -82,31 +80,31 @@ namespace MediaLib
             return list;
         }
 
-        private static void FindMainMediaPath(List<string> paths, ref MediaDevice device)
-        {
-            List<string> nextpaths = new List<string>();
+        //private static void FindMainMediaPath(List<string> paths, ref MediaDevice device)
+        //{
+        //    List<string> nextpaths = new List<string>();
 
-            foreach (string path in paths)
-            {
-                using (StringReader r = new StringReader(device.ListDirectory(path)))
-                {
-                    while (r.Peek() != -1)
-                    {
-                        MediaInfo info = new MediaInfo();
-                        device.UnixFileInfoToMediaInfo(r.ReadLine(), ref info);
-                        if (info.Name == MediaDir)
-                        {
-                            device.MainMediaPath = path + (path.EndsWith("/") ? null : "/") + info.Name;
-                            return;
-                        }
-                        else if (info.IsDirectory())
-                            nextpaths.Add(path + (path.EndsWith("/") ? null : "/") + info.Name);
+        //    foreach (string path in paths)
+        //    {
+        //        using (StringReader r = new StringReader(device.ListDirectory(path)))
+        //        {
+        //            while (r.Peek() != -1)
+        //            {
+        //                MediaInfo info = new MediaInfo();
+        //                device.UnixFileInfoToMediaInfo(r.ReadLine(), ref info);
+        //                if (info.Name == MediaDir)
+        //                {
+        //                    device.MainMediaPath = path + (path.EndsWith("/") ? null : "/") + info.Name;
+        //                    return;
+        //                }
+        //                else if (info.IsDirectory())
+        //                    nextpaths.Add(path + (path.EndsWith("/") ? null : "/") + info.Name);
 
-                    }
-                }
-            }
+        //            }
+        //        }
+        //    }
 
-            FindMainMediaPath(nextpaths, ref device);
-        }
+        //    FindMainMediaPath(nextpaths, ref device);
+        //}
     }
 }

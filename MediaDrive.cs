@@ -33,5 +33,27 @@ namespace MediaLib
         }
 
         #endregion
+
+        #region IMediaStorage Members
+
+
+        public List<MediaInfo> MediaTree
+        {
+            get
+            {
+                throw new NotImplementedException();
+            }
+            set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        public void FindMainMediaPath()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }
