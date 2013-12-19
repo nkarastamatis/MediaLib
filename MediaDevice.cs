@@ -9,7 +9,7 @@ using RegawMOD.Android;
 
 namespace MediaLib
 {
-    class MediaDevice : Device, IMediaStorage
+    public class MediaDevice : Device, IMediaStorage
     {
         private List<string> AndroidSystemDirs = new List<string>(new string[]
         {
@@ -33,14 +33,12 @@ namespace MediaLib
             throw new NotImplementedException();
         }
 
-        public void BuildMediaTree()
-        {
-            List<string> paths = new List<string>();
-            paths.Add(MainMediaPath);
-            SearchPaths(paths, BuildTree);
-        }
-
-
+        //public void BuildMediaTree()
+        //{
+        //    List<string> paths = new List<string>();
+        //    paths.Add(MainMediaPath);
+        //    SearchPaths(paths, BuildTree);
+        //}
 
         public void FindMainMediaPath()
         {
@@ -51,8 +49,6 @@ namespace MediaLib
         }
 
         #endregion
-
-        delegate bool SearchAction(ref MediaInfo info, string path);
 
         private bool IsMediaDir(ref MediaInfo info, string path)
         {
@@ -66,17 +62,17 @@ namespace MediaLib
             return endSearch;
         }
 
-        private bool BuildTree(ref MediaInfo info, string path)
-        {
-            bool endSearch = false;
+        //public bool BuildTree(ref MediaInfo info, string path)
+        //{
+        //    bool endSearch = false;
             
-            info.Path = path;
-            MediaTree.Add(info);
+        //    info.Path = path;
+        //    MediaTree.Add(info);
         
-            return endSearch;
-        }
+        //    return endSearch;
+        //}
 
-        private void SearchPaths(List<string> paths, SearchAction action)
+        public void SearchPaths(List<string> paths, SearchAction action)
         {
             List<string> nextpaths = new List<string>();
 

@@ -46,10 +46,12 @@ namespace MediaLib
                     List<string> dirs = new List<string>(Directory.EnumerateDirectories(mediadrive.Name));
                     foreach (string dir in dirs)
                     {
-                        if (dir.Contains("DCIM"))
+                        if (dir.Contains(TransferMedia.MediaDir))
                         {
-                            MediaDrive newdrive = new MediaDrive();
-                            list.Add(newdrive);
+                            MediaDrive drive = new MediaDrive();
+                            drive.MainMediaPath = dir;
+                            drive.BuildMediaTree();
+                            list.Add(drive);
                         }
                     }
                 }
@@ -68,9 +70,6 @@ namespace MediaLib
             foreach (string serial in android.ConnectedDevices)
             {
                 MediaDevice device = new MediaDevice(serial);
-                
-                
-                
                 device.FindMainMediaPath();
                 device.BuildMediaTree();
                 list.Add(device);

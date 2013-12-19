@@ -6,13 +6,36 @@ using System.Threading.Tasks;
 
 namespace MediaLib
 {
-    interface IMediaStorage
+    public delegate bool SearchAction(ref MediaInfo info, string path);
+
+    public interface IMediaStorage
     {
         string MainMediaPath { get; set; }
         List<MediaInfo> MediaTree { get; set; }
 
         void TransferToPC();
         void FindMainMediaPath();
-        void BuildMediaTree();
+        void SearchPaths(List<string> paths, SearchAction action);
+        //bool BuildTree(ref MediaInfo info, string path);
+    }
+
+    public static class MediaStorageHelper
+    {
+        public static void BuildMediaTree(this IMediaStorage media)
+        {
+            List<string> paths = new List<string>();
+            paths.Add(media.MainMediaPath);
+            media.SearchPaths(paths, media.BuildTree);
+        }
+
+        public static bool BuildTree(this IMediaStorage media, ref MediaInfo info, string path)
+        {
+            bool endSearch = false;
+
+            info.Path = path;
+            media.MediaTree.Add(info);
+
+            return endSearch;
+        }
     }
 }

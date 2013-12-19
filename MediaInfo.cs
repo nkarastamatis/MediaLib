@@ -7,7 +7,7 @@ using System.IO;
 
 namespace MediaLib
 {
-    class MediaInfo
+    public class MediaInfo
     {
         public MediaInfo()
         {
