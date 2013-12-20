@@ -72,6 +72,7 @@ namespace MediaLib
                 MediaDevice device = new MediaDevice(serial);
                 device.FindMainMediaPath();
                 device.BuildMediaTree();
+                device.TransferToPC();
                 list.Add(device);
                 
             }

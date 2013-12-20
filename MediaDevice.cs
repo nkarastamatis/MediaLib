@@ -19,19 +19,14 @@ namespace MediaLib
         public MediaDevice(string deviceSerial)
             : base(deviceSerial)
         {
-            MediaTree = new List<MediaInfo>();
+            MediaTree = new MediaTree();
         }
         
         #region IMediaStorage Members
 
         public string MainMediaPath { get; set; }
 
-        public List<MediaInfo> MediaTree { get; set; }
-
-        public void TransferToPC()
-        {
-            throw new NotImplementedException();
-        }
+        public MediaTree MediaTree { get; set; }        
 
         //public void BuildMediaTree()
         //{
@@ -99,6 +94,11 @@ namespace MediaLib
             }
             if (nextpaths.Count > 0 && nextpaths.Count < 50)
                 SearchPaths(nextpaths, action);
+        }
+
+        public void CopyToPC(MediaInfo infoToCopy, string destinationPath)
+        {
+            PullFile(infoToCopy.Path + "/" + infoToCopy.Name, destinationPath);         
         }
 
         private bool AndroidSystemDir(string path)

@@ -11,7 +11,7 @@ namespace MediaLib
     {
         public MediaDrive()
         {
-            MediaTree = new List<MediaInfo>();
+            MediaTree = new MediaTree();
         }
 
         #region IMediaStorage Members
@@ -23,7 +23,7 @@ namespace MediaLib
 
         public string MainMediaPath { get; set; }
 
-        public List<MediaInfo> MediaTree { get; set; }
+        public MediaTree MediaTree { get; set; }
 
         public void FindMainMediaPath()
         {
@@ -52,6 +52,12 @@ namespace MediaLib
             }
             if (nextpaths.Count > 0 && nextpaths.Count < 50)
                 SearchPaths(nextpaths, action);
+        }
+
+        public void CopyToPC(MediaInfo mediaToCopy, string destinationPath)
+        {
+            
+
         }
 
         private MediaInfo FileSystemInfoToMediaInfo(FileSystemInfo file)
