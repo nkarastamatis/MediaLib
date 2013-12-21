@@ -31,7 +31,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="AndroidLib">
-      <HintPath>..\AndroidLib-master\AndroidLib\bin\Debug\AndroidLib.dll</HintPath>
+      <HintPath>..\AndroidLib-master\AndroidLib\bin\$(ConfigurationName)\AndroidLib.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />

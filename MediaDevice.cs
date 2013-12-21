@@ -24,6 +24,7 @@ namespace MediaLib
         
         #region IMediaStorage Members
 
+        public string Name { get; set; }
         public string MainMediaPath { get; set; }
 
         public MediaTree MediaTree { get; set; }        

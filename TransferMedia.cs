@@ -9,16 +9,22 @@ using System.Text.RegularExpressions;
 
 namespace MediaLib
 {
-    public static class TransferMedia
+    public class TransferMedia
     {
         public static string MediaDir = "DCIM";
+        public List<IMediaStorage> MediaStorage { get; set; }
 
-        public static void transfer()
+        public TransferMedia()
         {
-            MediaStorage();
+            
         }
 
-        private static List<IMediaStorage> MediaStorage()
+        public void Initialize()
+        {
+            MediaStorage = GetMediaStorage();
+        }
+
+        private static List<IMediaStorage> GetMediaStorage()
         {
             List<IMediaStorage> list = new List<IMediaStorage>();
 
@@ -49,6 +55,7 @@ namespace MediaLib
                         if (dir.Contains(TransferMedia.MediaDir))
                         {
                             MediaDrive drive = new MediaDrive();
+                            drive.Name = mediadrive.Name;
                             drive.MainMediaPath = dir;
                             drive.BuildMediaTree();
                             list.Add(drive);
@@ -70,9 +77,10 @@ namespace MediaLib
             foreach (string serial in android.ConnectedDevices)
             {
                 MediaDevice device = new MediaDevice(serial);
+                device.Name = serial;
                 device.FindMainMediaPath();
                 device.BuildMediaTree();
-                device.TransferToPC();
+                //device.TransferToPC();
                 list.Add(device);
                 
             }

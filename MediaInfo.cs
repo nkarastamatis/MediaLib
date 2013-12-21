@@ -45,5 +45,16 @@ namespace MediaLib
             }
         }
 
+        public DateTime? Date
+        {
+            get 
+            {
+                if (CreationTime == default(DateTime))
+                    return null;
+
+                return CreationTime;
+            }
+        }
+
     }
 }

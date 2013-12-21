@@ -12,6 +12,7 @@ namespace MediaLib
 
     public interface IMediaStorage
     {
+        string Name { get; set; }
         string MainMediaPath { get; set; }
         MediaTree MediaTree { get; set; }
 
