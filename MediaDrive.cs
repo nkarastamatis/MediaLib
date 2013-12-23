@@ -55,10 +55,11 @@ namespace MediaLib
                 SearchPaths(nextpaths, action);
         }
 
-        public void CopyToPC(MediaInfo mediaToCopy, string destinationPath)
+        public void CopyToPC(MediaInfo mediaToCopy)
         {
-            
-
+            File.Copy(
+                Path.Combine(mediaToCopy.CurrentPath, mediaToCopy.Name),
+                mediaToCopy.FullName);
         }
 
         private MediaInfo FileSystemInfoToMediaInfo(FileSystemInfo file)
@@ -71,11 +72,6 @@ namespace MediaLib
             mediainfo.Name = file.Name;
             return mediainfo;
         }
-
-        //public bool BuildTree(ref MediaInfo info, string path)
-        //{
-        //    return true;
-        //}
 
         #endregion
 

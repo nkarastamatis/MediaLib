@@ -13,18 +13,43 @@ namespace MediaLib
     {
         public static string MediaDir = "DCIM";
         public List<IMediaStorage> MediaStorage { get; set; }
+        private Object _lock = new Object();
+
+        public Progress Progress = new Progress(100);
+
+        private AndroidController android = AndroidController.Instance;
 
         public TransferMedia()
         {
             
         }
 
+        #region Populate MediaStorage
+
         public void Initialize()
         {
             MediaStorage = GetMediaStorage();
         }
 
-        private static List<IMediaStorage> GetMediaStorage()
+        public bool Refresh()
+        {
+            lock (_lock)
+            {
+                if (MediaStorage == null)
+                {
+                    Initialize();
+                    return true;
+                }
+                else
+                {
+                    int beforeCount = MediaStorage.Count;
+                    MediaStorage.AddRange(GetMediaStorage());
+                    return beforeCount != MediaStorage.Count;
+                }
+            }
+        }
+
+        private List<IMediaStorage> GetMediaStorage()
         {
             List<IMediaStorage> list = new List<IMediaStorage>();
 
@@ -34,13 +59,23 @@ namespace MediaLib
             return list;
         }
 
-        private static List<IMediaStorage> MediaDrives()
+        private List<IMediaStorage> MediaDrives()
         {
             List<IMediaStorage> list = new List<IMediaStorage>();
 
             var mediadrives = DriveInfo.GetDrives()
                 .Where(
-                c => c.DriveType == DriveType.Removable); 
+                c => c.DriveType == DriveType.Removable);
+
+            if (MediaStorage != null)
+            {
+                MediaStorage.RemoveAll(
+                    s => s is MediaDrive &&
+                        !mediadrives
+                        .Select(d => d.Name)
+                        .Any(s.Name.Contains)
+                        );
+            }
 
             foreach (DriveInfo mediadrive in mediadrives)
             {
@@ -52,7 +87,9 @@ namespace MediaLib
                     List<string> dirs = new List<string>(Directory.EnumerateDirectories(mediadrive.Name));
                     foreach (string dir in dirs)
                     {
-                        if (dir.Contains(TransferMedia.MediaDir))
+                        if (dir.Contains(TransferMedia.MediaDir) &&
+                            (MediaStorage == null ||
+                            !MediaStorage.Any(s => s.Name == mediadrive.Name)))
                         {
                             MediaDrive drive = new MediaDrive();
                             drive.Name = mediadrive.Name;
@@ -67,25 +104,65 @@ namespace MediaLib
             return list;
         }
 
-        private static List<IMediaStorage> MediaDevices()
+        private List<IMediaStorage> MediaDevices()
         {
             List<IMediaStorage> list = new List<IMediaStorage>();
 
-            AndroidController android = AndroidController.Instance;
+            List<string> connectedDevices = android.ConnectedDevices;
+
+            if (MediaStorage != null)
+            {
+                MediaStorage.RemoveAll(
+                    s => s is MediaDevice &&
+                        !connectedDevices
+                        .Any(s.Name.Contains)
+                        );
+            }
 
             // Loop through all the connected devices
-            foreach (string serial in android.ConnectedDevices)
+            foreach (string serial in connectedDevices)
             {
-                MediaDevice device = new MediaDevice(serial);
-                device.Name = serial;
-                device.FindMainMediaPath();
-                device.BuildMediaTree();
-                //device.TransferToPC();
-                list.Add(device);
+                if (MediaStorage == null || 
+                    !MediaStorage.Any(s => s.Name == serial))
+                {
+                    MediaDevice device = new MediaDevice(serial);
+                    device.Name = serial;
+                    device.FindMainMediaPath();
+                    device.BuildMediaTree();
+                    list.Add(device);
+                }
                 
             }
 
             return list;
+        }
+
+        #endregion
+
+        public void transfer()
+        {
+            lock (_lock)
+            {
+                int totalFiles = 0;
+                MediaStorage.ForEach(s => totalFiles += s.MediaTree.FileCount);
+                Progress.Reset(totalFiles);
+                foreach (IMediaStorage mediastorage in MediaStorage)
+                {
+                    foreach (MediaInfo dir in mediastorage.MediaTree)
+                    {
+                        System.Diagnostics.Debug.Assert(dir.IsDirectory());
+
+                        Directory.CreateDirectory(dir.DestinationPath);
+                        foreach (MediaInfo file in dir.Files)
+                        {
+                            if (!File.Exists(file.FullName))
+                                mediastorage.CopyToPC(file);
+
+                            Progress.Next();
+                        }
+                    }
+                }
+            }
         }
 
         //private static void FindMainMediaPath(List<string> paths, ref MediaDevice device)
@@ -114,5 +191,39 @@ namespace MediaLib
 
         //    FindMainMediaPath(nextpaths, ref device);
         //}
+    }
+
+    public class Progress
+    {
+        public Progress(int max)
+        {
+            Max = max;
+        }
+
+        private int _current; // the 'real' curret
+        public int Max { get; set; }
+        public int Current 
+        {
+            get
+            {
+                if (Iterations == 0)
+                    return 0;
+                return (_current / Iterations) * Max;
+            }            
+        }
+
+        public int Iterations { get; set; }
+        public void Next()
+        {
+            _current++;
+        }
+
+        public void Reset(int? iterations = null)
+        {
+            _current = 0;
+
+            if (iterations != null)
+                Iterations = iterations.Value;
+        }
     }
 }

@@ -97,9 +97,9 @@ namespace MediaLib
                 SearchPaths(nextpaths, action);
         }
 
-        public void CopyToPC(MediaInfo infoToCopy, string destinationPath)
+        public void CopyToPC(MediaInfo infoToCopy)
         {
-            PullFile(infoToCopy.Path + "/" + infoToCopy.Name, destinationPath);         
+            PullFile(infoToCopy.CurrentPath + "/" + infoToCopy.Name, infoToCopy.DestinationPath);         
         }
 
         private bool AndroidSystemDir(string path)
