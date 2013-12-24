@@ -17,6 +17,7 @@ namespace MediaLib
 
         public Progress Progress = new Progress(100);
 
+        private Logger logger = new Logger("TransferMedia.log");
         private AndroidController android = AndroidController.Instance;
 
         public TransferMedia()
@@ -146,6 +147,12 @@ namespace MediaLib
                 int totalFiles = 0;
                 MediaStorage.ForEach(s => totalFiles += s.MediaTree.FileCount);
                 Progress.Reset(totalFiles);
+                logger.log(
+                    String.Format(
+                    "{0}: Starting to transfer {1} files",
+                    DateTime.Now,
+                    totalFiles));
+
                 foreach (IMediaStorage mediastorage in MediaStorage)
                 {
                     foreach (MediaInfo dir in mediastorage.MediaTree)
@@ -157,11 +164,18 @@ namespace MediaLib
                         {
                             if (!File.Exists(file.FullName))
                                 mediastorage.CopyToPC(file);
+                            else
+                                logger.log(String.Format("Did not copy {0} because it already exists.", file.FullName));
 
                             Progress.Next();
                         }
                     }
                 }
+
+                logger.log(
+                    String.Format(
+                    "{0}: Transfer complete",
+                    DateTime.Now));
             }
         }
 
@@ -208,7 +222,8 @@ namespace MediaLib
             {
                 if (Iterations == 0)
                     return 0;
-                return (_current / Iterations) * Max;
+                int val = (int)((Convert.ToDouble(_current) / Convert.ToDouble(Iterations)) * Max);
+                return val;
             }            
         }
 
@@ -224,6 +239,41 @@ namespace MediaLib
 
             if (iterations != null)
                 Iterations = iterations.Value;
+        }
+    }
+
+    public class Logger
+    {
+        private System.IO.StreamWriter file;
+        private string fullname;
+
+        public Logger(String filename)
+        {
+
+            // Write the string to a file.append mode is enabled so that the log
+            // lines get appended to  test.txt than wiping content and writing the log
+
+            string path = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "TransferMedia");
+
+            Directory.CreateDirectory(path);
+            fullname = Path.Combine(path, filename);
+
+            //file = new System.IO.StreamWriter(fullname, true);
+            
+        }
+
+        ~Logger()
+        {
+            //file.Close();
+        }
+
+        public void log(String line)
+        {
+            file = new System.IO.StreamWriter(fullname, true);
+            file.WriteLine(line);
+            file.Close();
         }
     }
 }
