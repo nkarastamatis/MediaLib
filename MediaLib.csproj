@@ -33,8 +33,14 @@
     <Reference Include="AndroidLib">
       <HintPath>..\AndroidLib-master\AndroidLib\bin\$(ConfigurationName)\AndroidLib.dll</HintPath>
     </Reference>
+    <Reference Include="Mail">
+      <HintPath>..\Mail\Redistributables\Mail.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Security" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -43,9 +49,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IMediaStorage.cs" />
+    <Compile Include="MailCredentials.cs" />
     <Compile Include="MediaDevice.cs" />
     <Compile Include="MediaDrive.cs" />
     <Compile Include="MediaInfo.cs" />
+    <Compile Include="MediaMail.cs" />
     <Compile Include="MediaTree.cs" />
     <Compile Include="TransferMedia.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

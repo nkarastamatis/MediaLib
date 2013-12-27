@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 using System.IO;
 using RegawMOD.Android;
 using System.Text.RegularExpressions;
+using Limilabs.Client.IMAP;
+using Limilabs.Mail;
+using Limilabs.Mail.MIME;
 
 namespace MediaLib
 {
@@ -19,10 +22,17 @@ namespace MediaLib
 
         private Logger logger = new Logger("TransferMedia.log");
         private AndroidController android = AndroidController.Instance;
+        private Dictionary<string, Imap> mailConnections = new Dictionary<string, Imap>();
 
         public TransferMedia()
         {
             
+        }
+
+        ~TransferMedia()
+        {
+            if (android != null)
+                android.Dispose();
         }
 
         #region Populate MediaStorage
@@ -50,12 +60,45 @@ namespace MediaLib
             }
         }
 
+        public void AddMailConnection(string newUser, Imap newConnection)
+        {
+            lock (_lock)
+            {
+                mailConnections.Add(newUser, newConnection);
+            }
+        }
+
         private List<IMediaStorage> GetMediaStorage()
         {
             List<IMediaStorage> list = new List<IMediaStorage>();
 
             list.AddRange(MediaDrives());
             list.AddRange(MediaDevices());
+            list.AddRange(MediaMail());
+
+            return list;
+        }
+
+        private List<IMediaStorage> MediaMail()
+        {
+            List<IMediaStorage> list = new List<IMediaStorage>();
+
+            foreach (KeyValuePair<string, Imap> entry in mailConnections)
+            {
+                if (MediaStorage == null ||
+                    !MediaStorage.Any(s => s.Name == entry.Key))
+                {
+                    Inform(String.Format(
+                        "Searching {0} for pictures.",
+                        entry.Key));
+                    MediaMail mail = new MediaMail(entry.Value);
+                    mail.Name = entry.Key;
+                    mail.MainMediaPath = typeof(Imap).ToString();
+                    mail.BuildMediaTree();
+                    Inform("Search Complete");
+                    list.Add(mail);
+                }
+            }
 
             return list;
         }
@@ -92,10 +135,14 @@ namespace MediaLib
                             (MediaStorage == null ||
                             !MediaStorage.Any(s => s.Name == mediadrive.Name)))
                         {
+                            Inform(String.Format(
+                                "Searching {0} for pictures.",
+                                mediadrive.Name));
                             MediaDrive drive = new MediaDrive();
                             drive.Name = mediadrive.Name;
                             drive.MainMediaPath = dir;
                             drive.BuildMediaTree();
+                            Inform("Search Complete");
                             list.Add(drive);
                         }
                     }
@@ -126,10 +173,14 @@ namespace MediaLib
                 if (MediaStorage == null || 
                     !MediaStorage.Any(s => s.Name == serial))
                 {
+                    Inform(String.Format(
+                        "Searching Andriod device {0} for pictures.",
+                        serial));
                     MediaDevice device = new MediaDevice(serial);
                     device.Name = serial;
                     device.FindMainMediaPath();
                     device.BuildMediaTree();
+                    Inform("Search complete");
                     list.Add(device);
                 }
                 
@@ -155,6 +206,8 @@ namespace MediaLib
 
                 foreach (IMediaStorage mediastorage in MediaStorage)
                 {
+                    Inform("Storage name: " + mediastorage.Name);
+
                     foreach (MediaInfo dir in mediastorage.MediaTree)
                     {
                         System.Diagnostics.Debug.Assert(dir.IsDirectory());
@@ -163,48 +216,32 @@ namespace MediaLib
                         foreach (MediaInfo file in dir.Files)
                         {
                             if (!File.Exists(file.FullName))
-                                mediastorage.CopyToPC(file);
-                            else
-                                logger.log(String.Format("Did not copy {0} because it already exists.", file.FullName));
+                            {
+                                Inform(String.Format("Copying {0} ...", file.FullName));
 
-                            Progress.Next();
+                                mediastorage.CopyToPC(file);
+
+                                Progress.Next();
+                            }
+                            else
+                            {
+                                Progress.Iterations--;
+                                Inform(String.Format("Did not copy {0} because it already exists.", file.FullName));
+                            }
+
                         }
                     }
                 }
 
-                logger.log(
-                    String.Format(
-                    "{0}: Transfer complete",
-                    DateTime.Now));
+                Inform("Transfer Complete");
             }
         }
 
-        //private static void FindMainMediaPath(List<string> paths, ref MediaDevice device)
-        //{
-        //    List<string> nextpaths = new List<string>();
-
-        //    foreach (string path in paths)
-        //    {
-        //        using (StringReader r = new StringReader(device.ListDirectory(path)))
-        //        {
-        //            while (r.Peek() != -1)
-        //            {
-        //                MediaInfo info = new MediaInfo();
-        //                device.UnixFileInfoToMediaInfo(r.ReadLine(), ref info);
-        //                if (info.Name == MediaDir)
-        //                {
-        //                    device.MainMediaPath = path + (path.EndsWith("/") ? null : "/") + info.Name;
-        //                    return;
-        //                }
-        //                else if (info.IsDirectory())
-        //                    nextpaths.Add(path + (path.EndsWith("/") ? null : "/") + info.Name);
-
-        //            }
-        //        }
-        //    }
-
-        //    FindMainMediaPath(nextpaths, ref device);
-        //}
+        private void Inform(string text)
+        {
+            Progress.Status = text;
+            logger.log(text);
+        }
     }
 
     public class Progress
@@ -216,7 +253,7 @@ namespace MediaLib
 
         private int _current; // the 'real' curret
         public int Max { get; set; }
-        public int Current 
+        public int Percent 
         {
             get
             {
@@ -227,6 +264,7 @@ namespace MediaLib
             }            
         }
 
+        public string Status { get; set; }
         public int Iterations { get; set; }
         public void Next()
         {
@@ -236,6 +274,7 @@ namespace MediaLib
         public void Reset(int? iterations = null)
         {
             _current = 0;
+            Status = String.Empty;
 
             if (iterations != null)
                 Iterations = iterations.Value;
@@ -254,7 +293,7 @@ namespace MediaLib
             // lines get appended to  test.txt than wiping content and writing the log
 
             string path = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                 "TransferMedia");
 
             Directory.CreateDirectory(path);
@@ -272,7 +311,8 @@ namespace MediaLib
         public void log(String line)
         {
             file = new System.IO.StreamWriter(fullname, true);
-            file.WriteLine(line);
+            file.WriteLine(
+                String.Format("{0}: {1}", DateTime.Now, line));
             file.Close();
         }
     }

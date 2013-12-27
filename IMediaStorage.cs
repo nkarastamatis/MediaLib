@@ -42,6 +42,8 @@ namespace MediaLib
 
         public static void TransferToPC(this IMediaStorage media)
         {
+            // NOT USED ANY MORE --- MOVED TO transfer()
+            // copies all found media if not already in the destination
             foreach (MediaInfo dir in media.MediaTree)
             {
                 Directory.CreateDirectory(dir.DestinationPath);
@@ -52,12 +54,13 @@ namespace MediaLib
                 }
             }
 
-            var now = DateTime.Now;
-            var startOfMonth = new DateTime(now.Year, now.AddMonths(-1).Month, 1);
+            // OLD code from when I was going to narrow it down
+            //var now = DateTime.Now;
+            //var startOfMonth = new DateTime(now.Year, now.AddMonths(-1).Month, 1);
 
-            List<MediaInfo> mediaToCopy = media.MediaTree
-                .Where(m => m.CreationTime > startOfMonth && !m.IsDirectory())
-                .ToList();
+            //List<MediaInfo> mediaToCopy = media.MediaTree
+            //    .Where(m => m.CreationTime > startOfMonth && !m.IsDirectory())
+            //    .ToList();
         }
     }
 }

@@ -26,6 +26,7 @@ namespace MediaLib
         public DateTime CreationTime { get; set; }
         public string CurrentPath { get; set; }
         public List<MediaInfo> Files { get; set; }
+        public object attachment { get; set; }
         
         public void SetAsDirectory()
         {
