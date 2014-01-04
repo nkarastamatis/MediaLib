@@ -237,6 +237,57 @@ namespace MediaLib
             }
         }
 
+        public void delete()
+        {
+            lock (_lock)
+            {
+                int totalFiles = 0;
+                MediaStorage.ForEach(s => totalFiles += s.MediaTree.FileCount);
+                Progress.Reset(totalFiles);
+                logger.log(
+                    String.Format(
+                    "{0}: Starting to delete {1} files",
+                    DateTime.Now,
+                    totalFiles));
+
+                foreach (IMediaStorage mediastorage in MediaStorage)
+                {
+                    Inform("Storage name: " + mediastorage.Name);
+
+                    foreach (MediaInfo dir in mediastorage.MediaTree)
+                    {
+                        System.Diagnostics.Debug.Assert(dir.IsDirectory());
+
+                        Directory.CreateDirectory(dir.DestinationPath);
+                        foreach (MediaInfo file in dir.Files)
+                        {
+                            if (File.Exists(file.FullName))
+                            {
+                                Inform(String.Format("Deleting {0} ...", file.FullName));
+
+                                mediastorage.Delete(file);
+
+                                Progress.Next();
+                            }
+                            else
+                            {
+                                Progress.Iterations--;
+                                Inform(
+                                    String.Format(
+                                    "Did not delete {0} from {1} because file does not exists in {2}.", 
+                                    file.Name,
+                                    file.CurrentPath,
+                                    file.DestinationPath));
+                            }
+
+                        }
+                    }
+                }
+
+                Inform("Delete Complete");
+            }
+        }
+
         private void Inform(string text)
         {
             Progress.Status = text;

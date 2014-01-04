@@ -71,6 +71,11 @@ namespace MediaLib
             
         }
 
+        public void Delete(MediaInfo mediaToDelete)
+        {
+            // not going to delete media from mail so just leaving this method empty
+        }
+    
         private MediaInfo MessageInfoToMediaInfo(MessageInfo messageinfo, MimeStructure attachment)
         {
             MediaInfo mediainfo = new MediaInfo();

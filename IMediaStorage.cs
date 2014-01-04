@@ -19,6 +19,7 @@ namespace MediaLib
         void FindMainMediaPath();
         void SearchPaths(List<string> paths, SearchAction action);
         void CopyToPC(MediaInfo mediaToCopy);
+        void Delete(MediaInfo mediaToDelete);
     }
 
     public static class MediaStorageHelper

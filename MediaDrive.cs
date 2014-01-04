@@ -62,6 +62,12 @@ namespace MediaLib
                 mediaToCopy.FullName);
         }
 
+        public void Delete(MediaInfo mediaToDelete)
+        {
+            File.Delete(
+                Path.Combine(mediaToDelete.CurrentPath, mediaToDelete.Name));
+        }
+
         private MediaInfo FileSystemInfoToMediaInfo(FileSystemInfo file)
         {
             MediaInfo mediainfo = new MediaInfo();

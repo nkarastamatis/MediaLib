@@ -58,16 +58,6 @@ namespace MediaLib
             return endSearch;
         }
 
-        //public bool BuildTree(ref MediaInfo info, string path)
-        //{
-        //    bool endSearch = false;
-            
-        //    info.Path = path;
-        //    MediaTree.Add(info);
-        
-        //    return endSearch;
-        //}
-
         public void SearchPaths(List<string> paths, SearchAction action)
         {
             List<string> nextpaths = new List<string>();
@@ -100,6 +90,11 @@ namespace MediaLib
         public void CopyToPC(MediaInfo infoToCopy)
         {
             PullFile(infoToCopy.CurrentPath + "/" + infoToCopy.Name, infoToCopy.DestinationPath);         
+        }
+
+        public void Delete(MediaInfo mediaToDelete)
+        {
+            string ret = DeleteFile(mediaToDelete.CurrentPath + "/" + mediaToDelete.Name);
         }
 
         private bool AndroidSystemDir(string path)
